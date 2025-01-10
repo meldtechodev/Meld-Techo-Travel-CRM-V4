@@ -19,7 +19,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
  
 @Entity
-@Table(name="Roles_Master")
+@Table(name="roles_master")
 @JsonIgnoreProperties(value= {"user"})
 public class Role {
 

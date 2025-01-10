@@ -1,5 +1,6 @@
+-- Create company_master table
 CREATE TABLE company_master (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     company_name VARCHAR(100) NOT NULL,
     parent_id BIGINT NULL,
     company_address VARCHAR(255) NOT NULL,
@@ -7,86 +8,141 @@ CREATE TABLE company_master (
     company_country_code VARCHAR(20),
     company_phone VARCHAR(15),
     company_website VARCHAR(255),
-    company_logo_path JSON  NULL,
+    company_logo_path JSON NULL,
     ipaddress VARCHAR(50),
     status BOOLEAN DEFAULT TRUE,
     isdelete BOOLEAN DEFAULT FALSE,
     created_by VARCHAR(50),
     modified_by VARCHAR(50),
-    created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-CREATE TABLE Roles_Master (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- Auto-incrementing primary key
-    role_name VARCHAR(255) UNIQUE NOT NULL, -- Unique role name
-    ipaddress VARCHAR(255), -- IP address
-    status BOOLEAN NOT NULL DEFAULT TRUE, -- Status column, default true
-    isdelete BOOLEAN NOT NULL DEFAULT FALSE, -- Is deleted flag, default false
-    created_by VARCHAR(255), -- Creator information
-    modified_by VARCHAR(255), -- Modifier information
-    created_date DATETIME DEFAULT CURRENT_TIMESTAMP, -- Auto-set on creation
-    modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Auto-set on update
-);
-CREATE TABLE Departments_master (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- Auto-incrementing primary key
-    department_name VARCHAR(255) NOT NULL, -- Department name (validated in application layer)
-    created_by VARCHAR(255), -- Created by user
-    modified_by VARCHAR(255), -- Modified by user
-    ipaddress VARCHAR(255), -- IP address
-    status BOOLEAN NOT NULL DEFAULT TRUE, -- Status column, default true
-    isdelete BOOLEAN NOT NULL DEFAULT FALSE, -- Is deleted flag, default false
-    created_date DATETIME DEFAULT CURRENT_TIMESTAMP, -- Auto-set creation date
-    modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Auto-set modification date
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE designations_master (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- Auto-incrementing primary key
-    designation_name VARCHAR(255) NOT NULL, -- Designation name (validated in application layer)
-    created_by VARCHAR(255), -- Created by user
-    modified_by VARCHAR(255), -- Modified by user
-    ipaddress VARCHAR(255), -- IP address
-    department_id BIGINT, -- Foreign key to Departments
-    status BOOLEAN NOT NULL DEFAULT TRUE, -- Status column, default true
-    isdelete BOOLEAN NOT NULL DEFAULT FALSE, -- Is deleted flag, default false
-    created_date DATETIME DEFAULT CURRENT_TIMESTAMP, -- Auto-set creation date
-    modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Auto-set modification date
-     FOREIGN KEY (department_id) REFERENCES Departments_master (id) ON DELETE SET NULL -- Foreign key constraint
-);
-CREATE TABLE modules_master (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- Auto-incrementing primary key
-    parent_id BIGINT, -- Parent module ID
-    module_name VARCHAR(255) NOT NULL, -- Module name (validated in application layer)
-    created_by VARCHAR(255), -- Created by user
-    modified_by VARCHAR(255), -- Modified by user
+-- Trigger function for updating modified_date
+CREATE OR REPLACE FUNCTION update_modified_date() 
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.modified_date = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger on company_master table
+CREATE TRIGGER update_company_modified_date
+BEFORE UPDATE ON company_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+-- Create roles_master table
+CREATE TABLE roles_master (
+    id SERIAL PRIMARY KEY,
+    role_name VARCHAR(255) UNIQUE NOT NULL,
     ipaddress VARCHAR(255),
-    status BOOLEAN NOT NULL DEFAULT TRUE, -- Status column, default true
-    isdelete BOOLEAN NOT NULL DEFAULT FALSE, -- Is deleted flag, default false
-    created_date DATETIME DEFAULT CURRENT_TIMESTAMP, -- Auto-set creation date
-    modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Auto-set modification date
+    status BOOLEAN NOT NULL DEFAULT TRUE,
+    isdelete BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by VARCHAR(255),
+    modified_by VARCHAR(255),
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE designation_modules_master (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- Auto-incrementing primary key
-    created_by VARCHAR(255), -- Created by user
-    modified_by VARCHAR(255), -- Modified by user
-    ipaddress VARCHAR(255), -- IP address
-    status BOOLEAN NOT NULL DEFAULT TRUE, -- Status flag (default true)
-    isdelete BOOLEAN NOT NULL DEFAULT FALSE, -- Is deleted flag (default false)
-    created_date DATETIME DEFAULT CURRENT_TIMESTAMP, -- Auto-set creation date
-    modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Auto-set modification date
-    designations_id BIGINT, -- Foreign key to designations table
-    modules_id BIGINT, -- Foreign key to modules table
-     FOREIGN KEY (designations_id) REFERENCES designations_master(id), -- Foreign key constraint
-     FOREIGN KEY (modules_id) REFERENCES modules_master(id) -- Foreign key constraint
+-- Trigger on roles_master table
+CREATE TRIGGER update_roles_modified_date
+BEFORE UPDATE ON roles_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+-- Create departments_master table
+CREATE TABLE departments_master (
+    id SERIAL PRIMARY KEY,
+    department_name VARCHAR(255) NOT NULL,
+    created_by VARCHAR(255),
+    modified_by VARCHAR(255),
+    ipaddress VARCHAR(255),
+    status BOOLEAN NOT NULL DEFAULT TRUE,
+    isdelete BOOLEAN NOT NULL DEFAULT FALSE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Trigger on departments_master table
+CREATE TRIGGER update_departments_modified_date
+BEFORE UPDATE ON departments_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+-- Create designations_master table
+CREATE TABLE designations_master (
+    id SERIAL PRIMARY KEY,
+    designation_name VARCHAR(255) NOT NULL,
+    created_by VARCHAR(255),
+    modified_by VARCHAR(255),
+    ipaddress VARCHAR(255),
+    department_id BIGINT,
+    status BOOLEAN NOT NULL DEFAULT TRUE,
+    isdelete BOOLEAN NOT NULL DEFAULT FALSE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (department_id) REFERENCES departments_master(id) ON DELETE SET NULL
+);
+
+-- Trigger on designations_master table
+CREATE TRIGGER update_designations_modified_date
+BEFORE UPDATE ON designations_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+-- Create modules_master table
+CREATE TABLE modules_master (
+    id SERIAL PRIMARY KEY,
+    parent_id BIGINT,
+    module_name VARCHAR(255) NOT NULL,
+    created_by VARCHAR(255),
+    modified_by VARCHAR(255),
+    ipaddress VARCHAR(255),
+    status BOOLEAN NOT NULL DEFAULT TRUE,
+    isdelete BOOLEAN NOT NULL DEFAULT FALSE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Trigger on modules_master table
+CREATE TRIGGER update_modules_modified_date
+BEFORE UPDATE ON modules_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+-- Create designation_modules_master table
+CREATE TABLE designation_modules_master (
+    id SERIAL PRIMARY KEY,
+    created_by VARCHAR(255),
+    modified_by VARCHAR(255),
+    ipaddress VARCHAR(255),
+    status BOOLEAN NOT NULL DEFAULT TRUE,
+    isdelete BOOLEAN NOT NULL DEFAULT FALSE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    designations_id BIGINT,
+    modules_id BIGINT,
+    FOREIGN KEY (designations_id) REFERENCES designations_master(id),
+    FOREIGN KEY (modules_id) REFERENCES modules_master(id)
+);
+
+-- Trigger on designation_modules_master table
+CREATE TRIGGER update_designation_modules_modified_date
+BEFORE UPDATE ON designation_modules_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+-- Create user_master table
 CREATE TABLE user_master (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     email VARCHAR(255),
     password VARCHAR(255) NOT NULL,
     f_name VARCHAR(255),
     l_name VARCHAR(255),
     m_name VARCHAR(255),
-    ipaddres VARCHAR(255),
+    ipaddress VARCHAR(255),
     timezone VARCHAR(255),
     mob_number VARCHAR(255),
     isdelete BOOLEAN,
@@ -97,93 +153,66 @@ CREATE TABLE user_master (
     role_id BIGINT,
     department_id BIGINT,
     designation_id BIGINT,
-    created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    modified_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (company_id) REFERENCES company_master(id),
-    FOREIGN KEY (role_id) REFERENCES Roles_Master(id),
-    FOREIGN KEY (department_id) REFERENCES Departments_master(id),
+    FOREIGN KEY (role_id) REFERENCES roles_master(id),
+    FOREIGN KEY (department_id) REFERENCES departments_master(id),
     FOREIGN KEY (designation_id) REFERENCES designations_master(id)
 );
 
+-- Trigger on user_master table
+CREATE TRIGGER update_user_modified_date
+BEFORE UPDATE ON user_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+-- Insert sample data into company_master
+-- Insert sample data into company_master
+INSERT INTO company_master (company_name, parent_id, company_address, company_email, company_country_code, company_phone, company_website, company_logo_path, ipaddress, status, isdelete, created_by, modified_by)
+VALUES 
+('Meldtecho', 0, '123 Business St City', 'meldtecho@gmail.com', 'US', '1234567890', 'www.meld.com', '["/path/to/logo1.png", "/path/to/logo2.png"]', '192.168.1.1', TRUE, FALSE, 'admin', 'admin');
 
 
-
-INSERT INTO company_master (company_name, parent_id, company_address, company_email, company_country_code, company_phone, company_website, company_logo_path, ipaddress, status, isdelete, created_by, modified_by) 
-VALUES ('Meldtecho', 0, '123 Business St City', 'meldtecho@gmail.com', 'US', '1234567890', 'www.meld.com', '[\"/path/to/logo1.png\", \"/path/to/logo2.png\"]', 
-'192.168.1.1', TRUE, FALSE, 'admin', 'admin');
-
+-- Insert sample data into roles_master
 INSERT INTO roles_master (role_name, ipaddress, status, isdelete, created_by, modified_by)
 VALUES ('Super Admin', '14.96.97.220', TRUE, FALSE, 'Meld Techo', 'Meld Techo');
 
-INSERT INTO Departments_master (
-    department_name, 
-    created_by, 
-    modified_by, 
-    ipaddress, 
-    status, 
-    isdelete
-) 
-VALUES (
-    'Admin',        -- Department name
-    'Meld Techo',        -- Created by user
-    'Meld Techo',        -- Modified by user
-    '192.168.1.1',  -- IP address
-    TRUE,           -- Status (active)
-    FALSE           -- Soft delete flag
-);
+-- Insert sample data into departments_master
+INSERT INTO departments_master (department_name, created_by, modified_by, ipaddress, status, isdelete)
+VALUES ('Admin', 'Meld Techo', 'Meld Techo', '192.168.1.1', TRUE, FALSE);
 
-INSERT INTO designations_master (
-    designation_name, 
-    created_by, 
-    modified_by, 
-    ipaddress, 
-    department_id, 
-    status, 
-    isdelete
-) 
-VALUES (
-    'Admin Head',     -- Designation name
-    'Meld Techo',                 -- Created by user
-    'Meld Techo',                 -- Modified by user
-    '192.168.1.2',           -- IP address
-    1,                       -- Department ID (foreign key referencing departments_master table)
-    TRUE,                    -- Status (active)
-    FALSE                    -- Soft delete flag (not deleted)
-);
+-- Insert sample data into designations_master
+INSERT INTO designations_master (designation_name, created_by, modified_by, ipaddress, department_id, status, isdelete)
+VALUES ('Admin Head', 'Meld Techo', 'Meld Techo', '192.168.1.2', 1, TRUE, FALSE);
 
-INSERT INTO modules_master (
-    parent_id, 
-    module_name, 
-    created_by, 
-    modified_by, 
-    ipaddress, 
-    status, 
-    isdelete
-) 
+-- Insert sample data into modules_master
+INSERT INTO modules_master (parent_id, module_name, created_by, modified_by, ipaddress, status, isdelete)
+VALUES 
+(0, 'Quickstart','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(0, 'Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(0, 'Packages','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(0, 'Masters','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(3, 'New Packages','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(3, 'Package Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New Country','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New States','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New City','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New Transport','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New Hotel','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New Vendor','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New Itinerary','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(4, 'New Policies','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(0, 'Booking','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(15, 'New Query','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(15, 'Query Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(0, 'My Team','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(18, 'New Members','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(18, 'User Boards Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(0, 'Customers','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(22, 'New Customer','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE),
+(22, 'Customer Board','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE);
 
-    VALUES ( 0, 'Quickstart','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 0, 'Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 0, 'Packages','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 0, 'Masters','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 3, 'New Packages','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 3, 'package Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New Country','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New States','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New City','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New Transport','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New Hotel','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New Vendor','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New Itinerary','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 4, 'New policies','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 0, 'Booking','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 15, 'New Query','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 15, 'Query Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 0, 'My Team','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 18, 'New Members','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-    ( 18, 'User Boards Dashboard','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-     ( 0, 'Customers','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-      ( 22, 'New Customer','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE ),
-        ( 22, 'Customer Board','Meld Techo','Meld Techo', '192.168.1.1', TRUE, FALSE );
 
   INSERT INTO designation_modules_master (
     created_by, 
@@ -224,7 +253,7 @@ INSERT INTO user_master (
     f_name, 
     l_name, 
     m_name, 
-    ipaddres, 
+    ipaddress, 
     timezone, 
     mob_number, 
     isdelete, 
@@ -244,7 +273,7 @@ INSERT INTO user_master (
     '192.168.1.1', 
     'UTC', 
     '9813734234',
-     TRUE,                    -- Status (active)
+     TRUE,                    
     FALSE,   
     'Super Admin', 
     'Super Admin', 
@@ -253,26 +282,3 @@ INSERT INTO user_master (
     1, 
     1
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
