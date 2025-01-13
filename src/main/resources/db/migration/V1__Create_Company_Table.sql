@@ -167,7 +167,273 @@ BEFORE UPDATE ON user_master
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_date();
 
--- Insert sample data into company_master
+CREATE TABLE country_master (
+    id BIGSERIAL PRIMARY KEY,
+    cname VARCHAR(100) NOT NULL,
+    ccode VARCHAR(3) NOT NULL UNIQUE,
+    pcode VARCHAR(20) NOT NULL,
+    ipaddress VARCHAR(50),
+    cimages JSON,
+    status BOOLEAN DEFAULT TRUE,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    isdelete BOOLEAN DEFAULT FALSE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_country_modified_date
+BEFORE UPDATE ON country_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE state_master (
+    id BIGSERIAL PRIMARY KEY,
+    sname VARCHAR(30) NOT NULL,
+    scode VARCHAR(3) NOT NULL,
+    status BOOLEAN DEFAULT TRUE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    isdelete BOOLEAN DEFAULT FALSE,
+    ipaddress VARCHAR(50),
+    cid BIGINT NOT NULL, -- Foreign key to Country
+    simage JSON,
+    FOREIGN KEY (cid) REFERENCES country_master(id)
+);
+
+CREATE TRIGGER update_state_modified_date
+BEFORE UPDATE ON state_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+
+CREATE TABLE city_master (
+    id BIGSERIAL PRIMARY KEY,
+    city_name VARCHAR(200) NOT NULL,
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    isdelete BOOLEAN DEFAULT FALSE,
+    dimage JSON,
+    c_id BIGINT NOT NULL, -- Foreign key to Country
+    s_id BIGINT NOT NULL, -- Foreign key to State
+    keyofattractions VARCHAR(255),
+    FOREIGN KEY (c_id) REFERENCES country_master(id),
+    FOREIGN KEY (s_id) REFERENCES state_master(id)
+);
+
+CREATE TRIGGER update_city_modified_date
+BEFORE UPDATE ON city_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE customer_master (
+    id BIGSERIAL PRIMARY KEY,
+    salutation VARCHAR(50),
+    f_name VARCHAR(100) NOT NULL,
+    l_name VARCHAR(100) NOT NULL,
+    email_id VARCHAR(150) NOT NULL,
+    contact_no VARCHAR(15) NOT NULL,
+    marrital_status VARCHAR(20),
+    customer_type VARCHAR(50),
+    lead_source VARCHAR(100) NOT NULL,
+    adhar_no VARCHAR(12),
+    passport_id VARCHAR(9),
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id BIGINT,
+    FOREIGN KEY (user_id) REFERENCES user_master(id)
+);
+
+CREATE TRIGGER update_customer_modified_date
+BEFORE UPDATE ON customer_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE policy_master (
+    id BIGSERIAL PRIMARY KEY,
+    policy_name VARCHAR(100) NOT NULL,
+    policy_description TEXT NOT NULL,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_policy_modified_date
+BEFORE UPDATE ON policy_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE activities_master (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_activities_modified_date
+BEFORE UPDATE ON activities_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE inclusion_master (
+    id BIGSERIAL PRIMARY KEY,
+    inclusion_name VARCHAR(255) NOT NULL,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE
+);
+
+CREATE TRIGGER update_inclusion_modified_date
+BEFORE UPDATE ON inclusion_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE exclusion_master (
+    id BIGSERIAL PRIMARY KEY,
+    exclusion_name VARCHAR(255) NOT NULL,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE
+);
+
+CREATE TRIGGER update_exclusion_modified_date
+BEFORE UPDATE ON exclusion_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE transport_master (
+    id BIGSERIAL PRIMARY KEY,
+    transport_mode VARCHAR(255) NOT NULL,
+    transport_supplier VARCHAR(255) NOT NULL,
+    price_per_day DECIMAL(10, 2) NOT NULL,
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_transport_modified_date
+BEFORE UPDATE ON transport_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+
+CREATE TABLE vendor_master (
+    id BIGSERIAL PRIMARY KEY,
+    vendor_name VARCHAR(255) NOT NULL,
+    vendor_email_id VARCHAR(255) NOT NULL,
+    vendor_contact_no VARCHAR(15) NOT NULL,
+    vendor_address TEXT NOT NULL,
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_vendor_modified_date
+BEFORE UPDATE ON vendor_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE query_master (
+    id BIGSERIAL PRIMARY KEY,
+    proposal_id VARCHAR(255),
+    requirement_type VARCHAR(100) NOT NULL,
+    travel_date TIMESTAMP,
+    days INT,
+    nights INT,
+    total_travellers INT NOT NULL CHECK (total_travellers BETWEEN 1 AND 500),
+    adults INT CHECK (adults >= 0),
+    kids INT CHECK (kids >= 0),
+    infants INT CHECK (infants >= 0),
+    packid BIGINT,
+    cityid BIGINT,
+    fromcityid BIGINT,
+    custid BIGINT,
+    salutation VARCHAR(20) NOT NULL,
+    f_name VARCHAR(100) NOT NULL,
+    l_name VARCHAR(100) NOT NULL,
+    email_id VARCHAR(150) NOT NULL,
+    contact_no VARCHAR(15) NOT NULL,
+    lead_source VARCHAR(100) NOT NULL,
+    food_preferences VARCHAR(255),
+    basic_cost DECIMAL(10, 2) DEFAULT 0,
+    gst DECIMAL(10, 2) DEFAULT 0,
+    total_cost DECIMAL(10, 2) DEFAULT 0,
+    query_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    query_type VARCHAR(100),
+    query_created_from VARCHAR(50),
+    userid BIGINT,
+    email_status BOOLEAN DEFAULT FALSE,
+    lead_status BOOLEAN DEFAULT TRUE,
+    query_createby VARCHAR(100),
+    query_modifiedby VARCHAR(100),
+    last_updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ipaddress VARCHAR(50),
+    isdelete BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (cityid) REFERENCES city_master(id),
+    FOREIGN KEY (fromcityid) REFERENCES city_master(id),
+    FOREIGN KEY (custid) REFERENCES customer_master(id),
+    FOREIGN KEY (userid) REFERENCES user_master(id)
+);
+
+CREATE TRIGGER update_query_modified_date
+BEFORE UPDATE ON query_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+CREATE TABLE sightseeing_master (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    ipaddress VARCHAR(50),
+    status BOOLEAN DEFAULT TRUE,
+    isdelete BOOLEAN DEFAULT FALSE,
+    created_by VARCHAR(50),
+    modified_by VARCHAR(50),
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_sightseeing_modified_date
+BEFORE UPDATE ON sightseeing_master
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_date();
+
+
 -- Insert sample data into company_master
 INSERT INTO company_master (company_name, parent_id, company_address, company_email, company_country_code, company_phone, company_website, company_logo_path, ipaddress, status, isdelete, created_by, modified_by)
 VALUES 
