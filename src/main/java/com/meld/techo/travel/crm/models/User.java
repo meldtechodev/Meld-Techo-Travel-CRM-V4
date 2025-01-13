@@ -42,7 +42,7 @@ public class User {
     private String mname;
     
     
-    private String ipaddres;
+    private String ipaddress;
     
    private String timezone;
    
@@ -246,17 +246,12 @@ public class User {
 	}
 
 	public String getIpaddres() {
-		return ipaddres;
+		return ipaddress;
 	}
 
-	public void setIpaddres(String ipaddres) {
-		this.ipaddres = ipaddres;
+	public void setIpaddres(String ipaddress) {
+		this.ipaddress = ipaddress;
 	}
-    
-    
-    
-    
-    
     
     
     
