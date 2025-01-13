@@ -7,11 +7,14 @@ import java.util.stream.Collectors;
  
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.meld.techo.travel.crm.dto.CustomException;
 import com.meld.techo.travel.crm.dto.DesignationsDTO;
+import com.meld.techo.travel.crm.dto.Response;
 import com.meld.techo.travel.crm.models.Departments;
 import com.meld.techo.travel.crm.models.Designations;
 import com.meld.techo.travel.crm.repository.DepartmentsRepository;
@@ -30,96 +33,192 @@ public class DesignationsService {
    private DepartmentsService departmentsService;
 
 
-   public List<DesignationsDTO> getAllDesignations() {
-       List<Designations> designations = designationsRepository.findAll();
-       return designations.stream()
-                          .map(Designations::toDTO)
-                          .collect(Collectors.toList());
-   }
- 
+//Paginated
    
-   public DesignationsDTO getDesignationById(Long id) {
-       Optional<Designations> designationOptional = designationsRepository.findById(id);
-       return designationOptional.map(Designations::toDTO).orElse(null);
-   }
-   public List<DesignationsDTO> getDesignationsByDepartmentsId(Long departmentsId) {
-	    List<Designations> designations = designationsRepository.findByDepartmentsId(departmentsId);
-	    return designations.stream()
-	                       .map(Designations::toDTO)
-	                       .collect(Collectors.toList());
-	}
-
-	public Designations addDesignations(Designations designations) {
-        // Check if department name already exists
-        if (designationsRepository.existsByDesignationName(designations.getDesignationName())) {
-            throw new IllegalArgumentException("Department with name " + designations.getDesignationName() + " already exists.");
-        }
-        // Save the department if it doesn't exist
-        return designationsRepository.save(designations);
-    }
-
-	
- 
-	
-
-
-
-	public Page<Designations> getDesignations(int page, int size, String sortDirection){
-		Sort sort = Sort.by(Sort.Order.asc("designationName"));
-		if("desc".equalsIgnoreCase(sortDirection)) {
-			sort = Sort.by(Sort.Order.desc("designationName"));
-		}
-		PageRequest pageable = PageRequest.of(page, size, sort);
-		return designationsRepository.findAll(pageable);
-	}
-
-	public Optional<Designations> getDesignationsById(Long id){
-		return designationsRepository.findById(id);
-	}
-
-
-
-	
+   public Page<DesignationsDTO> getDesignations(int page, int size, String sortDirection){
+	   Sort sort = Sort.by(Sort.Order.asc("designationName"));
+	   
+	   if("desc".equalsIgnoreCase(sortDirection)) {
+		   sort = Sort.by(Sort.Order.desc("designationName"));
+	   }
+	   
+	   
+	   PageRequest pageable = PageRequest.of(page, size, sort);
+	   Page<Designations> designation = designationsRepository.findAll(pageable);
+	   
+	   List<DesignationsDTO> filterdDesignations =  designation.stream()
+			   .filter(designations -> !designations.isIsdelete())
+			   .map(this::convertToDesignationsDTO3)
+			   .collect(Collectors.toList());
+	   
+	   return new PageImpl(filterdDesignations, pageable, designation.getTotalElements());
+	   }
    
-    @Transactional
-    public Designations updateDesignation(Long id, Designations updatedDesignation) {
-        Optional<Designations> existingDesignationOpt = designationsRepository.findById(id);
-        if (existingDesignationOpt.isPresent()) {
-            Designations existingDesignation = existingDesignationOpt.get();
-            // Ensure the department exists
-            Departments department = departmentsService.getDepartmentById(updatedDesignation.getDepartments().getId());
-            if (department == null) {
-                // Department doesn't exist
-                throw new EntityNotFoundException("Department with ID " + updatedDesignation.getDepartments().getId() + " not found.");
-            }
-            // Set the valid department
-            existingDesignation.setDepartments(department);
-            existingDesignation.setDesignationName(updatedDesignation.getDesignationName());
-            existingDesignation.setStatus(updatedDesignation.isStatus());
-            existingDesignation.setModifiedBy(updatedDesignation.getModifiedBy());
-            existingDesignation.setIpaddress(updatedDesignation.getIpaddress());
-            existingDesignation.setIsdelete(updatedDesignation.isIsdelete());
-            // Save the updated entity
-            return designationsRepository.save(existingDesignation);
-        }
-        return null;
-    }
-
-    public String deleteDesignations(Long id) {
-    	Designations existingDesignations = designationsRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Designations not found"));
-
+   private DesignationsDTO convertToDesignationsDTO3(Designations designations) {
+	   DesignationsDTO designationsDTO = new DesignationsDTO(
+			   designations.getId(),
+	  		   designations.getDesignationName(),
+	  		   designations.getCreatedBy(),
+	  		   designations.getModifiedBy(),
+	  		   designations.getIpaddress(),
+	  		   designations.isStatus(),
+	  		   designations.isIsdelete(),
+	  		   designations.getCreatedDate(),
+	  		   designations.getModifiedDate(),
+	  		   designations.getDepartments() != null ? designations.getDepartments().getId() : null,
+	  		   designations.getDepartments() != null ? designations.getDepartments().getDepartmentName() : null
+	     );
+	  return designationsDTO;
+	   
+   }
+   
+   
+   
+   
+   // GetAll
+   public Response<Object> getAllDesignations(){
+		 List<Designations> designationss = designationsRepository.findAll().stream()
+				       .filter(designations -> !designations.isIsdelete())
+				       .collect(Collectors.toList());
+		   if(designationss.isEmpty()) {
+			   
+			   throw new CustomException("Not Getting Designations", "404");
+	       }
+			   List<DesignationsDTO> designationsDTOList = designationss.stream()
+					   .map(this::convertToDesignationsDTO1).collect(Collectors.toList());
+			   
+			   return new Response<>("Successful", "Getting All Destination Successfully", designationsDTOList);
+			   
+		   }
+ private DesignationsDTO convertToDesignationsDTO1(Designations designations) {
+     return new DesignationsDTO(
+  		   designations.getId(),
+  		   designations.getDesignationName(),
+  		   designations.getCreatedBy(),
+  		   designations.getModifiedBy(),
+  		   designations.getIpaddress(),
+  		   designations.isStatus(),
+  		   designations.isIsdelete(),
+  		   designations.getCreatedDate(),
+  		   designations.getModifiedDate(),
+  		   designations.getDepartments() != null ? designations.getDepartments().getId() : null,
+  		   designations.getDepartments() != null ? designations.getDepartments().getDepartmentName() : null
+     );
+ }
+   
  
-	 
-    	existingDesignations.setDesignationName(existingDesignations.getDesignationName());
-    	existingDesignations.setStatus(existingDesignations.isStatus());
-    	existingDesignations.setModifiedBy(existingDesignations.getModifiedBy());
-    	existingDesignations.setIpaddress(existingDesignations.getIpaddress());
-    	existingDesignations.setIsdelete(true);
-
+//Get Designations by DesignationsId
  
-    	designationsRepository.save(existingDesignations);
-    return "data deleted";
-}}
+ public Response<Object> getDesignationsById(Long id) {
+     Optional<Designations> designationss = designationsRepository.findById(id);
+     if (designationss.isEmpty()) {
+     	 throw new CustomException("Not Getting Designations", "404");
+     }
+     List<DesignationsDTO> designationsDTOList = designationss.stream().map(this::convertToDesignationsDTO1).collect(Collectors.toList());
+     return new Response<>("Successful", "Designation fetched successfully", designationsDTOList);
+ }
+ 
+ private DesignationsDTO convertToDesignationsDTO2(Designations designations) {
+     return new DesignationsDTO(
+  		   designations.getId(),
+  		   designations.getDesignationName(),
+  		   designations.getCreatedBy(),
+  		   designations.getModifiedBy(),
+  		   designations.getIpaddress(),
+  		   designations.isStatus(),
+  		   designations.isIsdelete(),
+  		   designations.getCreatedDate(),
+  		   designations.getModifiedDate(),
+  		   designations.getDepartments() != null ? designations.getDepartments().getId() : null,
+  		   designations.getDepartments() != null ? designations.getDepartments().getDepartmentName() : null
+     );
+ }
+ 
+ 
+ 
+//Get Designations By Departmentid
+ public Response<Object> getDesignationsByDepartmentsId(Long departmentsId) {
+     List<Designations> designationss = designationsRepository.findByDepartmentsId(departmentsId);
+     if (designationss.isEmpty()) {
+     	 throw new CustomException("Not Getting Designations", "404");
+     }
+     List<DesignationsDTO> designationsDTOList = designationss.stream().map(this::convertToDesignationsDTO1).collect(Collectors.toList());
+     return new Response<>("Successful", "Designation fetched successfully By departmentsId", designationsDTOList);
+ }
+ 
+ private DesignationsDTO convertToDesignationsDTO(Designations designations) {
+     return new DesignationsDTO(
+  		   designations.getId(),
+  		   designations.getDesignationName(),
+  		   designations.getCreatedBy(),
+  		   designations.getModifiedBy(),
+  		   designations.getIpaddress(),
+  		   designations.isStatus(),
+  		   designations.isIsdelete(),
+  		   designations.getCreatedDate(),
+  		   designations.getModifiedDate(),
+  		   designations.getDepartments() != null ? designations.getDepartments().getId() : null,
+  		   designations.getDepartments() != null ? designations.getDepartments().getDepartmentName() : null
+     );
+ }
+   
+   
+   //Create 
+   public Designations addDesignations(Designations designations) {
+	    if (designations.getDepartments() == null || designations.getDepartments().getId() == null) {
+	        throw new CustomException("Department ID cannot be null.", "DEPARTMENT_ID_REQUIRED");
+	    }
 
+	    if (designationsRepository.existsByDesignationName(designations.getDesignationName())) {
+	        throw new CustomException("Designation with name " + designations.getDesignationName() + " already exists.", "404");
+	    }
+
+	    Departments department = departmentsRepository.findById(designations.getDepartments().getId())
+	            .orElseThrow(() -> new CustomException("Department with ID " + designations.getDepartments().getId() + " does not exist.", "DEPARTMENT_NOT_FOUND"));
+	    designations.setDepartments(department);
+	    
+	    return designationsRepository.save(designations);
+	}
+
+
+   // Update code 
+   public Designations updateDesignation(Long id, Designations updatedDesignation) {
+       Designations existingDesignation = designationsRepository.findById(id).orElse(null);
+
+       if (existingDesignation == null) {
+           throw new CustomException("Designation not found", "404");
+       }
+
+       existingDesignation.setDesignationName(updatedDesignation.getDesignationName());
+       existingDesignation.setDepartments(updatedDesignation.getDepartments());
+       existingDesignation.setStatus(updatedDesignation.isStatus());
+       existingDesignation.setModifiedBy(updatedDesignation.getModifiedBy());
+       existingDesignation.setModifiedBy(updatedDesignation.getCreatedBy());
+       existingDesignation.setIpaddress(updatedDesignation.getIpaddress());
+       existingDesignation.setIsdelete(updatedDesignation.isIsdelete());
+       return designationsRepository.save(existingDesignation);
+   }
+   
+   
+   
+   // Delete
+   public String deleteDesignations(Long id) {
+	   Designations existingDesignations = designationsRepository.findById(id)
+	            .orElseThrow(() -> new CustomException("Designations not found", "404"));
+	    existingDesignations.setIsdelete(true); 
+
+	    
+	    designationsRepository.save(existingDesignations);
+
+	    return "data deleted"; 
+	}
+   
+
+
+
+
+   public Designations getDesignationById(Long id) {
+	    Optional<Designations> designation = designationsRepository.findById(id);
+	    return designation.orElse(null); // Return null if not found, or you can throw a custom exception
+	}}
 

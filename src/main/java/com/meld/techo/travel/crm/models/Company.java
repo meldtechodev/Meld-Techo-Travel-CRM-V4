@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 //import java.util.Date;
 import java.util.List;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -79,32 +81,39 @@ public class Company {
 	private LocalDateTime createddate;
 	@Column(name="modified_date")
 	private LocalDateTime modifieddate;
-	@PrePersist
-	protected void onCreate() {
-		createddate = LocalDateTime.now();
-		modifieddate = LocalDateTime.now();
-	}
+	
 
-	public LocalDateTime getCreateddate() {
-		return createddate;
-	}
+	
+	 private static final ThreadLocal<String> userIpAddress = new ThreadLocal<>();
 
-	public void setCreateddate(LocalDateTime createddate) {
-		this.createddate = createddate;
-	}
+	    public static void setUserIpAddress(String ipAddress) {
+	        userIpAddress.set(ipAddress);
+	    }
 
-	public LocalDateTime getModifieddate() {
-		return modifieddate;
-	}
+	   
+	 
+	
+	
+	    @PrePersist
+	    protected void onCreate() {
+	        // Set createdBy and modifiedBy from the SecurityContext
+	        this.createdby = SecurityContextHolder.getContext().getAuthentication().getName();
+	        this.modifiedby = this.createdby;
 
-	public void setModifieddate(LocalDateTime modifieddate) {
-		this.modifieddate = modifieddate;
-	}
+	        // Set created and modified date
+	        createddate = LocalDateTime.now();
+	        modifieddate = LocalDateTime.now();
 
-	@PreUpdate
-	protected void onUpdate() {
-		modifieddate = LocalDateTime.now();
-	}
+	        // Set the IP address from the ThreadLocal variable (if available)
+	        this.ipaddress = userIpAddress.get();
+	    }
+
+	    @PreUpdate
+	    protected void onUpdate() {
+	        // Set modifiedBy and modifiedDate during updates
+	        this.modifiedby = SecurityContextHolder.getContext().getAuthentication().getName();
+	        modifieddate = LocalDateTime.now();
+	    }
 
 	public Long getParent_id() {
 		return parent_id;
@@ -202,6 +211,46 @@ public class Company {
 
 	public void setUser(List<User> user) {
 		this.user = user;
+	}
+
+
+
+
+
+	public LocalDateTime getCreateddate() {
+		return createddate;
+	}
+
+
+
+
+
+	public void setCreateddate(LocalDateTime createddate) {
+		this.createddate = createddate;
+	}
+
+
+
+
+
+	public LocalDateTime getModifieddate() {
+		return modifieddate;
+	}
+
+
+
+
+
+	public void setModifieddate(LocalDateTime modifieddate) {
+		this.modifieddate = modifieddate;
+	}
+
+
+
+
+
+	public static ThreadLocal<String> getUseripaddress() {
+		return userIpAddress;
 	}
 
 

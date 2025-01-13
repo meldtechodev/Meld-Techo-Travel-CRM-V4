@@ -6,56 +6,126 @@ import java.util.stream.Collectors;
  
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.meld.techo.travel.crm.dto.CustomException;
+import com.meld.techo.travel.crm.dto.Response;
 import com.meld.techo.travel.crm.models.Departments;
+import com.meld.techo.travel.crm.models.Designations;
 import com.meld.techo.travel.crm.repository.DepartmentsRepository;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class DepartmentsService {
 
 @Autowired
-	private DepartmentsRepository departmentsRepository;
+private DepartmentsRepository departmentsRepository;
 
-	public Optional<Departments> getDepartmentsById(Long id){
-		return departmentsRepository.findById(id);
+
+@Autowired
+private HttpServletRequest request;
+
+
+	// Get all with pageable
+	public Page<Departments> getDepartments(int page, int size, String sortDirection) {
+	    Sort sort = Sort.by(Sort.Order.asc("departmentName"));
+	    if ("desc".equalsIgnoreCase(sortDirection)) {
+	        sort = Sort.by(Sort.Order.desc("departmentName"));
+	    }
+
+	    PageRequest pageable = PageRequest.of(page, size, sort);
+	    
+	    Page<Departments> departmentPage = departmentsRepository.findAll(pageable);
+	    List<Departments> filteredDepartments = departmentPage.getContent().stream()
+	            .filter(departments -> !departments.isIsdelete())  
+	            .collect(Collectors.toList());
+
+	    return new PageImpl<>(filteredDepartments, pageable, departmentPage.getTotalElements());
+	}
+	
+	
+	// Get all
+	public Response<Object> getAllDepartments() {
+	    List<Departments> departmentsList = departmentsRepository.findAll().stream()
+	            .filter(departments -> !departments.isIsdelete())  // Exclude deleted customers
+	            .collect(Collectors.toList());
+
+	    if (departmentsList.isEmpty()) {
+	        throw new CustomException("No customers found", "404");
+	    }
+
+	    return new Response<>("Successful", "Getting All Departments Successfully", departmentsList);
 	}
 
-	public List<Departments> getAllDepartments() {
-        List<Departments> depart = departmentsRepository.findAll();
 
-        return depart.stream()
-                        .filter(departments -> !departments.isIsdelete())  // Keep countries where isDelete is false
-                        .collect(Collectors.toList());
-    }
- 
+	//Get Departments by Departments Id
+	public Response<Object> getDepartmentsById(Long id){
+		Optional<Departments> departmentsOptional = departmentsRepository.findById(id);
+		
+		if(departmentsOptional.isEmpty()) {
+			throw new CustomException(" Departments Not Founds", "404");
+		}
+		
+		return new Response<>("Successful", "Getting Departments By Departmets Id", departmentsOptional);
+	}
 	
-	public Page<Departments> getDepartments(int page, int size, String sortDirection) {
-        // Set default sorting direction to ascending
-        Sort sort = Sort.by(Sort.Order.asc("departmentName"));
-        // Change sorting direction based on the user input
-        if ("desc".equalsIgnoreCase(sortDirection)) {
-            sort = Sort.by(Sort.Order.desc("departmentName"));
-        }
-        // Create a Pageable object with page, size, and sort
-        PageRequest pageable = PageRequest.of(page, size, sort);
-        // Return the paginated and sorted result
-        return departmentsRepository.findAll(pageable);
-    }
-
-
+	
+	// Create Service Code
 	public Departments addDepartments(Departments departments) {
-        // Check if department name already exists
-        if (departmentsRepository.existsByDepartmentName(departments.getDepartmentName())) {
+		
+		if (departmentsRepository.existsByDepartmentName(departments.getDepartmentName())) {
             throw new IllegalArgumentException("Department with name " + departments.getDepartmentName() + " already exists.");
         }
-        // Save the department if it doesn't exist
-        return departmentsRepository.save(departments);
-    }
+		
+     
+     
+		return departmentsRepository.save(departments);	
+	}
+	
+	
+	
+	
+	
+	
+	
+	// Updated Service Code
+	public Departments updateDepartments(Long id, Departments updatedDepartment) {
+		Departments existingDepartments = departmentsRepository.findById(id).orElse(null);
+
+	       if (existingDepartments == null) {
+	           throw new CustomException("Departments not found", "404");
+	       }
+
+	       existingDepartments.setDepartmentName(updatedDepartment.getDepartmentName());
+	       existingDepartments.setStatus(updatedDepartment.isStatus());
+	       existingDepartments.setModifiedBy(updatedDepartment.getModifiedBy());
+	       existingDepartments.setModifiedBy(updatedDepartment.getCreatedBy());
+	       existingDepartments.setIpaddress(updatedDepartment.getIpaddress());
+	       existingDepartments.setIsdelete(updatedDepartment.isIsdelete());
+	       return departmentsRepository.save(existingDepartments);
+	   }
+	
+	
+	
+	// Delete
+	   public String deleteDepartments(Long id) {
+		   Departments existingDepartments = departmentsRepository.findById(id)
+		            .orElseThrow(() -> new CustomException("Departments not found", "404"));
+		   existingDepartments.setIsdelete(true); 
+
+		    
+		   departmentsRepository.save(existingDepartments);
+
+		    return "data deleted"; 
+		}
+	
+	
+	
 
 
 
@@ -63,46 +133,5 @@ public class DepartmentsService {
 	        return departmentsRepository.findById(id)
 	                .orElseThrow(() -> new RuntimeException("Department not found with ID: " + id));
 	    }
-
-	public void deleteById(Long id) {
-	    // Check if the company exists
-	    Optional<Departments> existingDepartmentsOptional = departmentsRepository.findById(id);
-	    if (existingDepartmentsOptional.isPresent()) {
-	        // Delete the company if it exists
-	    	departmentsRepository.deleteById(id);
-	    } else {
-	        // Handle case where company is not found
-	        throw new EntityNotFoundException("Departments with ID " + id + " not found.");
-	    }
-	}
-
-	public Departments updateDepartments(Departments de) {
-		return departmentsRepository.save(de);
-	}
-
-
-
-	public String deleteDepartments(Long id) {
-        // Check if the country exists before attempting to delete
-		Departments existingDepartments = departmentsRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Departments not found"));
-
-		existingDepartments.setId(id);
-		existingDepartments.setDepartmentName(existingDepartments.getDepartmentName());
-		existingDepartments.setCreatedBy(existingDepartments.getCreatedBy());
-		existingDepartments.setModifiedBy(existingDepartments.getModifiedBy());
-		existingDepartments.setIpaddress(existingDepartments.getIpaddress());
-		existingDepartments.setStatus(existingDepartments.isStatus());
-		existingDepartments.setIsdelete(true);
-
-		departmentsRepository.save(existingDepartments);
-        return "data deleted";
-    }
- 
- 
-	
-
-
-
 
 }

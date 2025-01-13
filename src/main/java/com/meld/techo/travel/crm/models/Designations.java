@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
- 
- 
+
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -66,14 +66,19 @@ public class Designations {
 	private LocalDateTime modifiedDate;
 
 	@PrePersist
-	protected void onCreate() {
-		createdDate = LocalDateTime.now();
+    protected void onCreate() {
+        this.createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        this.modifiedBy = this.createdBy;
+        createdDate = LocalDateTime.now();
 		modifiedDate = LocalDateTime.now();
-	}
-	@PreUpdate
-	protected void onUpdate() {
-		modifiedDate = LocalDateTime.now();
-	}
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.modifiedBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        modifiedDate = LocalDateTime.now();
+        
+    }
 	public Long getId() {
 		return id;
 	}
@@ -146,24 +151,24 @@ public class Designations {
 		this.user = user;
 	}
 
-
+}
  
 	
-	public DesignationsDTO toDTO() {
-        DepartmentsDTO departmentDTO = (departments != null) ? new DepartmentsDTO(departments.getId(), departments.getDepartmentName()) : null;
-        return new DesignationsDTO(
-                this.id,
-                this.designationName,
-                this.createdBy,
-                this.modifiedBy,
-                this.ipaddress,
-                this.status,
-                this.isdelete,
-                this.createdDate,
-                this.modifiedDate,
-                departmentDTO
-        );
-    }
-}
+//	public DesignationsDTO toDTO() {
+//        DepartmentsDTO departmentDTO = (departments != null) ? new DepartmentsDTO(departments.getId(), departments.getDepartmentName()) : null;
+//        return new DesignationsDTO(
+//                this.id,
+//                this.designationName,
+//                this.createdBy,
+//                this.modifiedBy,
+//                this.ipaddress,
+//                this.status,
+//                this.isdelete,
+//                this.createdDate,
+//                this.modifiedDate,
+//                departmentDTO
+//        );
+//    }
+//}
 
  

@@ -3,9 +3,9 @@ package com.meld.techo.travel.crm.models;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
- 
 
- 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -63,23 +63,19 @@ public class DesignationModules {
  
  
 	@PrePersist
- 
-	protected void onCreate() {
- 
-		createdDate = LocalDateTime.now();
- 
+    protected void onCreate() {
+        this.createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        this.modifiedBy = this.createdBy;
+        LocalDateTime createddate = LocalDateTime.now();
 		modifiedDate = LocalDateTime.now();
- 
-	}
- 
- 
-	@PreUpdate
- 
-	protected void onUpdate() {
- 
-		modifiedDate = LocalDateTime.now();
- 
-	}
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.modifiedBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        modifiedDate = LocalDateTime.now();
+        
+    }
  
  
 	public Long getId() {

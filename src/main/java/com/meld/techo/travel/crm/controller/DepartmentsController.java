@@ -17,10 +17,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.meld.techo.travel.crm.dto.CustomException;
+import com.meld.techo.travel.crm.dto.ErrorResponse;
+import com.meld.techo.travel.crm.dto.Response;
 import com.meld.techo.travel.crm.models.Departments;
 import com.meld.techo.travel.crm.security.service.DepartmentsService;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("Motherson/crm/v1/departments")
@@ -28,75 +33,134 @@ public class DepartmentsController {
 
 	@Autowired
 	private DepartmentsService departmentsService;
+	
+	
+	// Get all/paginated
+	@GetMapping("/all/paginated")
+	public ResponseEntity<?> getDesignations(
+	        @RequestParam(value = "page", defaultValue = "0") int page,
+	        @RequestParam(value = "size", defaultValue = "10") int size,
+	        @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection) {
+	    try {
+	        Page<Departments> departments = departmentsService.getDepartments(page, size, sortDirection);
 
-
-	@GetMapping("/getalldepartments")
-	public ResponseEntity<List<Departments>> getAllDepartments() {
-        List<Departments> depart = departmentsService.getAllDepartments();
-        return new ResponseEntity<>(depart, HttpStatus.OK);
-    }
-
-	@GetMapping("/getbyid/{id}")
-	public ResponseEntity<Departments> getDepartmentsById(@PathVariable Long id){
-		Optional<Departments> depart = departmentsService.getDepartmentsById(id);
-		return depart.map(value  -> new ResponseEntity<>(value, HttpStatus.OK))
-				.orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	        Response<Page<Departments>> response = new Response<>("SUCCESS", "Designations fetched successfully", departments);
+	        return ResponseEntity.ok(response);
+	    } catch (Exception e) {
+	       
+	        ErrorResponse errorResponse = new ErrorResponse("FAILED", e.getMessage(), "500");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+	    }
 	}
-
-
-
-	@GetMapping("/getall")
-	public Page<Departments> getDepartments(
-		    @RequestParam(value = "page", defaultValue = "0") int page,  // Default page is 0
-		    @RequestParam(value = "size", defaultValue = "10") int size, // Default size is 10
-		    @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection // Default sort direction is ascending
-		) {
-		    return departmentsService.getDepartments(page, size, sortDirection);  // Call the service method with pagination and sorting parameters
+	
+	
+	//Get All
+	@GetMapping("/all")
+	public ResponseEntity<Response<Object>> getAllDepartments() {
+	    try {
+	        
+	        Response<Object> response = departmentsService.getAllDepartments();
+	        return new ResponseEntity<>(response, HttpStatus.OK);
+	    } catch(Exception e) {
+	        
+	        throw e;
+	    }
+	}
+	
+	// Get By Id
+	@GetMapping("/{id}")
+	public ResponseEntity<Response<Object>> getDepartmentsId(@PathVariable Long id){
+		try {
+			Response<Object> response = departmentsService.getDepartmentsById(id);
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		}catch(Exception e) {
+			throw e;
+			
 		}
+	}
+	
+	@PostMapping("")
+	public ResponseEntity<Response<?>> addDepartments(@RequestBody @Valid Departments departments, HttpServletRequest request){
+		
+		
+		String clientIpAddress = getClientIp(request);
+		departments.setIpaddress(clientIpAddress);
+		
+		try {
+			
+			Departments depart = departmentsService.addDepartments(departments);
+			
+			Response<Departments> response = new Response<>("SUCCESS", "Departments add Successfully", depart);
+			return new ResponseEntity<>(response, HttpStatus.CREATED);
+		}catch(CustomException e) {
+			
+			ErrorResponse errorResponse = new ErrorResponse("FAILURE", e.getMessage(), e.getErrorCode());
+			Response<ErrorResponse> response = new Response<>("FAILURE", "Validation error", errorResponse);
+			
+			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+		
+		} catch(Exception e) {
+			
+			 ErrorResponse errorResponse = new ErrorResponse("FAILURE", "An unexpected error occurred: " + e.getMessage(), "500");
+		        Response<ErrorResponse> response = new Response<>("FAILURE", "Internal server error", errorResponse);
+			
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+	}
+	
+	
+	
+	@PutMapping("/{id}")
+	public ResponseEntity<Response<Departments>> updateDepartment(
+	        @PathVariable("id") Long id,
+	        @RequestBody Departments updatedDepartment, HttpServletRequest request) {
+		
+		String clientIpAddress = getClientIp(request);
+		updatedDepartment.setIpaddress(clientIpAddress);
 
+	   
+		Departments updated = departmentsService.updateDepartments(id, updatedDepartment);
 
-
-	@PostMapping("/create")
-    public ResponseEntity<?> addDepartments(@RequestBody Departments departments) {
+	    if (updated != null) {
+	        Response<Departments> response = new Response<>("success", "Departments updated successfully", null);
+	        return ResponseEntity.ok(response);
+	    } else {
+	      
+	        Response<Departments> response = new Response<>("error", "Departments not found", null);
+	        return ResponseEntity.notFound().build();
+	    }
+	}
+	
+	
+	@DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteDepartments(@PathVariable Long id) {
         try {
-            Departments depart = departmentsService.addDepartments(departments);
-            return new ResponseEntity<>(depart, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(e.getMessage()); // Return the error message if department name already exists
+            String result = departmentsService.deleteDepartments(id);
+            
+            return new ResponseEntity<>(new Response<>("SUCCESS", "Departments deleted successfully", result), HttpStatus.OK);
+        } catch (CustomException e) {
+           
+            ErrorResponse errorResponse = new ErrorResponse("FAILED", e.getMessage(), e.getErrorCode());
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+           
+            ErrorResponse errorResponse = new ErrorResponse("FAILED", "An unexpected error occurred: " + e.getMessage(), "500");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }}	
+	
+	
+	// Helper method to fetch client IP address
+    private String getClientIp(HttpServletRequest request) {
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+            ipAddress = request.getRemoteAddr();
         }
+        return ipAddress;
     }
+}
+	
 
-
-	@PutMapping("/updatebyid/{id}")
-	public ResponseEntity<Departments> updateDepartments(@PathVariable Long id, @RequestBody Departments departments){
-		if(departments != null)
-		{
-			Departments depart = new Departments();
-			depart.setId(id);
-			depart.setDepartmentName(departments.getDepartmentName());
-			depart.setCreatedBy(departments.getCreatedBy());
-			depart.setModifiedBy(departments.getModifiedBy());
-			depart.setIpaddress(departments.getIpaddress());
-			depart.setStatus(departments.isStatus());
-			depart.setIsdelete(departments.isIsdelete());
-
-			departmentsService.updateDepartments(depart);
-			return ResponseEntity.ok(depart);
-		}
-		else
-		{
-			return ResponseEntity.notFound().build();
-		}
-	}
-
-
-
-
-	@PutMapping("/deleteby/{id}")
-	public ResponseEntity<?> deleteDepartments(@PathVariable Long id) {
-		departmentsService.deleteDepartments(id);
-		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-	}
-	}
-
+	
+	
+	
