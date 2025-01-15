@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,7 +133,8 @@ public class CompanyController {
 	        imageUrls.add(imageUrl);
 	    }
 
-	    company.setCompanylogo(imageUrls);
+//	    company.setCompanylogo(imageUrls);
+	    company.setCompanylogo(imageUrls);	    
 
 	    Company createdCompany = this.companyservice.createcompanyser(company);
 

@@ -8,7 +8,7 @@ CREATE TABLE company_master (
     company_country_code VARCHAR(20),
     company_phone VARCHAR(15),
     company_website VARCHAR(255),
-    company_logo_path JSON NULL,
+    company_logo_path VARCHAR(255) NULL,
     ipaddress VARCHAR(50),
     status BOOLEAN DEFAULT TRUE,
     isdelete BOOLEAN DEFAULT FALSE,
@@ -173,7 +173,7 @@ CREATE TABLE country_master (
     ccode VARCHAR(3) NOT NULL UNIQUE,
     pcode VARCHAR(20) NOT NULL,
     ipaddress VARCHAR(50),
-    cimages JSON,
+    cimages VARCHAR(255),
     status BOOLEAN DEFAULT TRUE,
     created_by VARCHAR(50),
     modified_by VARCHAR(50),
@@ -199,7 +199,7 @@ CREATE TABLE state_master (
     isdelete BOOLEAN DEFAULT FALSE,
     ipaddress VARCHAR(50),
     cid BIGINT NOT NULL, -- Foreign key to Country
-    simage JSON,
+    simage VARCHAR(255),
     FOREIGN KEY (cid) REFERENCES country_master(id)
 );
 
@@ -219,7 +219,7 @@ CREATE TABLE city_master (
     created_by VARCHAR(50),
     modified_by VARCHAR(50),
     isdelete BOOLEAN DEFAULT FALSE,
-    dimage JSON,
+    dimage VARCHAR(255),
     c_id BIGINT NOT NULL, -- Foreign key to Country
     s_id BIGINT NOT NULL, -- Foreign key to State
     keyofattractions VARCHAR(255),

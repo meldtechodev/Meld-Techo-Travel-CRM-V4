@@ -61,9 +61,11 @@ public class Company {
 @Pattern(regexp = "^(https?://)?(www\\.)?[a-zA-Z0-9-]+(\\.[a-zA-Z]{2,})+$", message = "Company website must be a valid URL")
 	@Column(name="company_website")
 	private String companywebsite;
-@Column(name = "company_logo_path", columnDefinition = "JSON")
-@Convert(converter = ListToJsonConverter.class)
-	private List< String> companylogo;
+
+	@Column(name = "company_logo_path")
+//	@Convert(converter = ListToJsonConverter.class)
+	private List<String> companylogo;
+	
 	private String ipaddress;
 
 	private boolean status;
@@ -126,8 +128,8 @@ public class Company {
 		return companylogo;
 	}
 
-	public void setCompanylogo(List<String> companylogo) {
-		this.companylogo = companylogo;
+	public void setCompanylogo(List<String> imageUrls) {
+		this.companylogo = imageUrls;
 	}
 
 	public Long getId() {
